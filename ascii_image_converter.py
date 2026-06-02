@@ -6,8 +6,8 @@ import os
 import sys
 
 # --- CONFIGURATION ---
-# Replace with Ishita's actual Bluetooth assigned Incoming COM Port from Device Manager
-BLUETOOTH_COM_PORT = "COM6"  
+# Replace with receiver's actual Bluetooth assigned Incoming COM Port from Device Manager
+BLUETOOTH_COM_PORT = "COM10"  
 BAUD_RATE = 115200
 
 # Defines the maximum character width allowed for the ASCII image on your terminal
