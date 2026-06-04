@@ -10,7 +10,7 @@ import time
 
 COM_PORT    = "COM9"   # <-- System2's Bluetooth COM port
 BAUD_RATE   = 115200
-SAVE_FOLDER = r"C:\Users\Ishita\OneDrive\Desktop\Python\kuka"
+SAVE_FOLDER = r"D:\Shreya\Projects_PES\esp32_photobooth\esp32_ascii_art\ascii_photostrip"
 
 def main():
     os.makedirs(SAVE_FOLDER, exist_ok=True)
