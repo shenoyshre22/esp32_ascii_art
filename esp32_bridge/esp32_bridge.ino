@@ -1,40 +1,31 @@
 #include "BluetoothSerial.h"
 
-// Instantiate the Bluetooth classic serial object
 BluetoothSerial SerialBT;
 
+const int CHUNK_SIZE = 512;
+uint8_t buffer[CHUNK_SIZE];
+
 void setup() {
-  // Open the hardware USB Serial pipeline at 115200 baudrate
   Serial.begin(115200);
-  
-  // Initialize the Bluetooth broadcast identity beacon
-  // This is the name your friend's laptop will search for in Bluetooth settings
-  SerialBT.begin("ESP32_ASCII_Bridge"); 
-  
-  Serial.println("=====================================================");
-  Serial.println("            ESP32 WIRELESS DATA REPLAY BRIDGE        ");
-  Serial.println("=====================================================");
-  Serial.println("Status: Hardware Interfaces Initialized.");
-  Serial.println("Action: Pair System 2 with 'ESP32_ASCII_Bridge' now.");
-  Serial.println("=====================================================");
+  SerialBT.begin("ESP32_BT_Demo");
+  delay(1000);
+  Serial.println("BRIDGE_READY");
 }
 
 void loop() {
-  // DIRECTION 1: Raw Image Data from System 1 (USB) ──> System 2 (Bluetooth Airwaves)
-  // Check if System 1's Python script has dumped raw JPEG bytes into the USB serial buffer
+  // USB → Bluetooth
   if (Serial.available()) {
-    // Read a single byte from the hardware USB UART controller chip...
-    char incomingByte = Serial.read(); 
-    // ...and immediately cast it out over the airwaves via the internal Bluetooth antenna
-    SerialBT.write(incomingByte);      
+    int len = Serial.readBytes(buffer, CHUNK_SIZE);
+    if (len > 0) {
+      SerialBT.write(buffer, len);
+    }
   }
-  
-  // DIRECTION 2: Handshake/Control Data from System 2 (Bluetooth) ──> System 1 (USB)
-  // Check if System 2 sends any data or confirmation packets back over the airwaves
+
+  // Bluetooth → USB
   if (SerialBT.available()) {
-    // Read the single byte from the wireless radio subsystem controller...
-    char incomingByte = SerialBT.read(); 
-    // ...and pass it straight back up the USB cable to System 1's Python terminal
-    Serial.write(incomingByte);          
+    int len = SerialBT.readBytes(buffer, CHUNK_SIZE);
+    if (len > 0) {
+      Serial.write(buffer, len);
+    }
   }
 }
