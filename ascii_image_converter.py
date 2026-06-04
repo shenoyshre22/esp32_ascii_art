@@ -8,7 +8,7 @@ import time
 #  Receives ASCII art over Bluetooth and displays it
 # ============================================================
 
-COM_PORT    = "COM10"   # <-- System2's Bluetooth COM port
+COM_PORT    = "COM9"   # <-- System2's Bluetooth COM port
 BAUD_RATE   = 115200
 SAVE_FOLDER = r"C:\Users\Ishita\OneDrive\Desktop\Python\kuka"
 
