@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 COM_PORT    = "COM9"
 BAUD_RATE   = 115200
 SAVE_FOLDER = r"D:\Shreya\Projects_PES\esp32_photobooth\esp32_ascii_art\ascii_photostrip"
-ASCII_WIDTH = 180   # must match sender
+ASCII_WIDTH = 1600   # must match sender
 
 def render_ascii_image(ascii_lines):
     char_w = 8
