@@ -7,7 +7,7 @@ import sys
 
 # --- CONFIGURATION ---
 # Replace with receiver's actual Bluetooth assigned Incoming COM Port from Device Manager
-BLUETOOTH_COM_PORT = "COM10"  
+BLUETOOTH_COM_PORT = "COM9"  
 BAUD_RATE = 115200
 
 # Defines the maximum character width allowed for the ASCII image on your terminal
