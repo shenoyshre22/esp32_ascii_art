@@ -14,10 +14,14 @@ import PIL.ImageOps
 
 ESP32_PORT  = "COM4"
 BAUD_RATE   = 115200
-ASCII_WIDTH = 180
+ASCII_WIDTH = 160
 
-# 70-level gradient from DENSE (dark areas) to LIGHT (bright areas)
-ASCII_CHARS = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+# Reference image style:
+# BRIGHT skin/highlights → dense packed chars like @#%8&W
+# MID shadows            → medium chars like *+=-:
+# DARK/background        → sparse dots or spaces
+# This goes from BRIGHT → DARK (inverted mapping)
+ASCII_CHARS = "MMMWWW###@@@%%%888&&&***+++===---:::...   "
 
 def capture_photo():
     cap = cv2.VideoCapture(0)
@@ -53,23 +57,24 @@ def capture_photo():
     cv2.destroyAllWindows()
     return frame
 
-def frame_to_ascii_image(frame, width=180):
+def frame_to_ascii_image(frame, width=160):
     rgb    = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img    = Image.fromarray(rgb)
 
-    # Resize keeping aspect ratio (0.45 corrects char height)
+    # Resize — 0.45 corrects character aspect ratio
     aspect = img.height / img.width
     height = int(width * aspect * 0.45)
     img    = img.resize((width, height), Image.LANCZOS)
 
-    # Boost contrast and sharpness significantly
-    img = IE.Contrast(img).enhance(2.0)
-    img = IE.Sharpness(img).enhance(3.0)
-    img = IE.Brightness(img).enhance(1.1)
+    # Heavy contrast boost to separate bright skin from dark shadows
+    img = IE.Contrast(img).enhance(2.5)
+    img = IE.Sharpness(img).enhance(2.0)
 
-    # Grayscale + equalize tonal range
+    # Grayscale
     img = img.convert("L")
-    img = PIL.ImageOps.autocontrast(img, cutoff=1)
+
+    # Stretch tonal range so we use the full 0-255 spectrum
+    img = PIL.ImageOps.autocontrast(img, cutoff=2)
 
     pixels      = list(img.getdata())
     ascii_lines = []
@@ -77,20 +82,22 @@ def frame_to_ascii_image(frame, width=180):
     n           = len(ASCII_CHARS) - 1
 
     for i, pixel in enumerate(pixels):
-        # Invert: dark pixel → dense char, bright pixel → light char
-        idx   = int(pixel / 255 * n)
-        row  += ASCII_CHARS[idx]
+        # INVERT mapping:
+        # pixel=255 (white/bright skin) → index 0 → dense char 'M'
+        # pixel=0   (black/shadow)      → index n → space ' '
+        idx  = int((255 - pixel) / 255 * n)
+        row += ASCII_CHARS[idx]
         if (i + 1) % width == 0:
             ascii_lines.append(row)
             row = ""
 
-    # Render: black background, white text, small tight font
+    # ── Render: BLACK background, WHITE dense chars for bright areas ──
     char_w = 8
     char_h = 14
     img_w  = width * char_w
     img_h  = len(ascii_lines) * char_h
 
-    canvas = Image.new("RGB", (img_w, img_h), color=(0, 0, 0))  # BLACK bg
+    canvas = Image.new("RGB", (img_w, img_h), color=(0, 0, 0))
     draw   = ImageDraw.Draw(canvas)
 
     font = None
@@ -101,13 +108,12 @@ def frame_to_ascii_image(frame, width=180):
     ]:
         try:
             font = ImageFont.truetype(path, 12)
-            print(f"Using font: {path}")
+            print(f"Font: {path}")
             break
         except:
             continue
     if font is None:
         font = ImageFont.load_default()
-        print("Using default font")
 
     for row_idx, line in enumerate(ascii_lines):
         draw.text((0, row_idx * char_h), line, fill=(255, 255, 255), font=font)
@@ -153,7 +159,7 @@ def main():
     canvas, ascii_lines = frame_to_ascii_image(frame, width=ASCII_WIDTH)
 
     canvas.save("ascii_preview.png")
-    print("Preview saved! Opening preview window...")
+    print("Preview saved as ascii_preview.png")
 
     arr     = np.array(canvas)
     cv2_img = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
