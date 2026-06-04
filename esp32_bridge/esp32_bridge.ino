@@ -7,7 +7,7 @@ uint8_t buffer[CHUNK_SIZE];
 
 void setup() {
   Serial.begin(115200);
-  SerialBT.begin("ESP32_BT_Demo");
+  SerialBT.begin("ASCII_ART");
   delay(1000);
   Serial.println("BRIDGE_READY");
 }
