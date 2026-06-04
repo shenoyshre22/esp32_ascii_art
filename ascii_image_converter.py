@@ -6,32 +6,35 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ============================================================
 #  PHOTOBOOTH RECEIVER — System2
-#  Receives ASCII lines, renders as proper image, saves + shows
 # ============================================================
 
-COM_PORT    = "COM9"   # <-- System2's Bluetooth COM port
+COM_PORT    = "COM9"
 BAUD_RATE   = 115200
 SAVE_FOLDER = r"D:\Shreya\Projects_PES\esp32_photobooth\esp32_ascii_art\ascii_photostrip"
-
-
-ASCII_WIDTH = 120
+ASCII_WIDTH = 200    # must match sender
 
 def render_ascii_image(ascii_lines):
-    char_w = 10
-    char_h = 18
+    char_w = 7
+    char_h = 13
     img_w  = ASCII_WIDTH * char_w
     img_h  = len(ascii_lines) * char_h
 
     canvas = Image.new("RGB", (img_w, img_h), color=(0, 0, 0))
     draw   = ImageDraw.Draw(canvas)
 
-    try:
-        font = ImageFont.truetype("cour.ttf", 14)
-    except:
+    font = None
+    for path in [
+        "C:/Windows/Fonts/lucon.ttf",
+        "C:/Windows/Fonts/cour.ttf",
+        "C:/Windows/Fonts/consola.ttf",
+    ]:
         try:
-            font = ImageFont.truetype("C:/Windows/Fonts/cour.ttf", 14)
+            font = ImageFont.truetype(path, 11)
+            break
         except:
-            font = ImageFont.load_default()
+            continue
+    if font is None:
+        font = ImageFont.load_default()
 
     for i, line in enumerate(ascii_lines):
         draw.text((0, i * char_h), line, fill=(255, 255, 255), font=font)
@@ -51,9 +54,9 @@ def main():
         print(f"ERROR: {e}")
         sys.exit(1)
 
-    lines      = []
-    receiving  = False
-    total      = 0
+    lines     = []
+    receiving = False
+    total     = 0
 
     try:
         while True:
@@ -69,20 +72,15 @@ def main():
 
             elif line == "ASCII_END" and receiving:
                 receiving = False
-                print(f"\nReceived all {len(lines)} lines!")
-                print("Rendering image...")
+                print(f"\nReceived all {len(lines)} lines! Rendering...")
 
-                # Render to image
                 canvas    = render_ascii_image(lines)
                 timestamp = time.strftime("%H%M%S")
                 save_path = os.path.join(SAVE_FOLDER, f"ascii_photo_{timestamp}.png")
                 canvas.save(save_path)
 
-                print(f"\n your photobooth strip is saved at: {save_path}")
-
-                # Auto open the image
+                print(f"\n✅ Your photobooth strip is saved at:\n   {save_path}")
                 os.startfile(save_path)
-
                 print("\nWaiting for next photo...")
                 lines = []
 
@@ -92,7 +90,6 @@ def main():
 
     except KeyboardInterrupt:
         print("\nStopped.")
-        # Save whatever arrived
         if lines:
             canvas    = render_ascii_image(lines)
             save_path = os.path.join(SAVE_FOLDER, "ascii_partial.png")
