@@ -56,7 +56,7 @@ def main():
                 with open(save_path, "w", encoding="utf-8") as f:
                     f.write(full_art)
 
-                print(f"\n\n✅ ASCII art saved to: {save_path}")
+                print(f"\n\n your ASCII art photostrip has been saved to: {save_path}")
                 print("Waiting for next photo...\n")
 
             elif receiving:
