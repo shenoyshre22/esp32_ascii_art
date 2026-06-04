@@ -11,11 +11,11 @@ from PIL import Image, ImageDraw, ImageFont
 COM_PORT    = "COM9"
 BAUD_RATE   = 115200
 SAVE_FOLDER = r"D:\Shreya\Projects_PES\esp32_photobooth\esp32_ascii_art\ascii_photostrip"
-ASCII_WIDTH = 200    # must match sender
+ASCII_WIDTH = 180   # must match sender
 
 def render_ascii_image(ascii_lines):
-    char_w = 7
-    char_h = 13
+    char_w = 8
+    char_h = 14
     img_w  = ASCII_WIDTH * char_w
     img_h  = len(ascii_lines) * char_h
 
@@ -25,11 +25,11 @@ def render_ascii_image(ascii_lines):
     font = None
     for path in [
         "C:/Windows/Fonts/lucon.ttf",
-        "C:/Windows/Fonts/cour.ttf",
         "C:/Windows/Fonts/consola.ttf",
+        "C:/Windows/Fonts/cour.ttf",
     ]:
         try:
-            font = ImageFont.truetype(path, 11)
+            font = ImageFont.truetype(path, 12)
             break
         except:
             continue
@@ -72,14 +72,12 @@ def main():
 
             elif line == "ASCII_END" and receiving:
                 receiving = False
-                print(f"\nReceived all {len(lines)} lines! Rendering...")
-
+                print(f"\nReceived {len(lines)} lines! Rendering image...")
                 canvas    = render_ascii_image(lines)
                 timestamp = time.strftime("%H%M%S")
                 save_path = os.path.join(SAVE_FOLDER, f"ascii_photo_{timestamp}.png")
                 canvas.save(save_path)
-
-                print(f"\n✅ Your photobooth strip is saved at:\n   {save_path}")
+                print(f"\n✅ Saved: {save_path}")
                 os.startfile(save_path)
                 print("\nWaiting for next photo...")
                 lines = []
@@ -94,7 +92,7 @@ def main():
             canvas    = render_ascii_image(lines)
             save_path = os.path.join(SAVE_FOLDER, "ascii_partial.png")
             canvas.save(save_path)
-            print(f"Partial image saved: {save_path}")
+            print(f"Partial saved: {save_path}")
     finally:
         bt.close()
 
