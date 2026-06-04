@@ -24,7 +24,7 @@ def capture_photo():
         print("ERROR: Cannot open webcam!")
         sys.exit(1)
 
-    print("\n here's your PHOTOBOOTH — Get ready & Smile widee!")
+    print("\n ASCII PHOTOBOOTH — Get ready & Smile widee !")
     print("Press SPACE to take photo, Q to quit\n")
 
     while True:
@@ -53,7 +53,7 @@ def capture_photo():
             ret, frame = cap.read()
             cv2.imshow("PHOTOBOOTH - Press SPACE", frame)
             cv2.waitKey(500)
-            print("Photo captured!")
+            print("📸 Photo captured!")
             break
 
         elif key == ord('q'):
@@ -156,7 +156,7 @@ def main():
 
     send_over_bluetooth(ascii_art, esp)
     esp.close()
-    print("\n Yayy Done! Check System2 for the ASCII art.")
+    print("\n Done! Check System2 for the ASCII art.")
 
 if __name__ == "__main__":
     main()
