@@ -10,12 +10,12 @@ from PIL import Image, ImageDraw, ImageFont
 #  PHOTOBOOTH SENDER — System1
 # ============================================================
 
-ESP32_PORT  = "COM7"       # <-- change to your ESP32 USB port
+ESP32_PORT  = "COM4"       # <-- change to your ESP32 USB port
 BAUD_RATE   = 115200
 ASCII_WIDTH = 120          # columns of characters
 
 # Dense to light — gives good contrast like the reference image
-ASCII_CHARS = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+ASCII_CHARS = "$@B%8&WM#*oahkbdpqwmHMWZO0QLCJUYXzcvunxrjft/|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 
 def capture_photo():
     cap = cv2.VideoCapture(0)
