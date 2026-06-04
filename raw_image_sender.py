@@ -5,6 +5,8 @@ import sys
 import os
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+import PIL.ImageEnhance as IE
+import PIL.ImageOps
 
 # ============================================================
 #  PHOTOBOOTH SENDER — System1
@@ -12,20 +14,17 @@ from PIL import Image, ImageDraw, ImageFont
 
 ESP32_PORT  = "COM4"
 BAUD_RATE   = 115200
-ASCII_WIDTH = 200      # more columns = more detail
+ASCII_WIDTH = 180
 
-# This specific character set gives the reference-image look
-# Ordered from darkest (most ink) to lightest (least ink)
-ASCII_CHARS = "@@@###%%%***+++===---:::...   "
+# 70-level gradient from DENSE (dark areas) to LIGHT (bright areas)
+ASCII_CHARS = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
 
 def capture_photo():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("ERROR: Cannot open webcam!")
         sys.exit(1)
-
     print("\nPHOTOBOOTH — Press SPACE to take photo, Q to quit\n")
-
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -50,65 +49,65 @@ def capture_photo():
             cap.release()
             cv2.destroyAllWindows()
             sys.exit(0)
-
     cap.release()
     cv2.destroyAllWindows()
     return frame
 
-def frame_to_ascii_image(frame, width=200):
-    # Convert to PIL
+def frame_to_ascii_image(frame, width=180):
     rgb    = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img    = Image.fromarray(rgb)
 
-    # Resize — 0.43 corrects for character aspect ratio
+    # Resize keeping aspect ratio (0.45 corrects char height)
     aspect = img.height / img.width
-    height = int(width * aspect * 0.43)
+    height = int(width * aspect * 0.45)
     img    = img.resize((width, height), Image.LANCZOS)
 
-    # Enhance contrast before converting to grayscale
-    import PIL.ImageEnhance as IE
-    img = IE.Contrast(img).enhance(1.5)
-    img = IE.Sharpness(img).enhance(2.0)
-    img = img.convert("L")
+    # Boost contrast and sharpness significantly
+    img = IE.Contrast(img).enhance(2.0)
+    img = IE.Sharpness(img).enhance(3.0)
+    img = IE.Brightness(img).enhance(1.1)
 
-    # Apply histogram equalization for better tonal range
-    import PIL.ImageOps
-    img = PIL.ImageOps.autocontrast(img, cutoff=2)
+    # Grayscale + equalize tonal range
+    img = img.convert("L")
+    img = PIL.ImageOps.autocontrast(img, cutoff=1)
 
     pixels      = list(img.getdata())
     ascii_lines = []
     row         = ""
+    n           = len(ASCII_CHARS) - 1
 
     for i, pixel in enumerate(pixels):
-        idx   = int(pixel / 255 * (len(ASCII_CHARS) - 1))
+        # Invert: dark pixel → dense char, bright pixel → light char
+        idx   = int(pixel / 255 * n)
         row  += ASCII_CHARS[idx]
         if (i + 1) % width == 0:
             ascii_lines.append(row)
             row = ""
 
-    # Render onto black canvas with small monospace font
-    char_w  = 7
-    char_h  = 13
-    img_w   = width * char_w
-    img_h   = len(ascii_lines) * char_h
+    # Render: black background, white text, small tight font
+    char_w = 8
+    char_h = 14
+    img_w  = width * char_w
+    img_h  = len(ascii_lines) * char_h
 
-    canvas  = Image.new("RGB", (img_w, img_h), color=(0, 0, 0))
-    draw    = ImageDraw.Draw(canvas)
+    canvas = Image.new("RGB", (img_w, img_h), color=(0, 0, 0))  # BLACK bg
+    draw   = ImageDraw.Draw(canvas)
 
-    # Try to get a clean monospace font
     font = None
     for path in [
-        "C:/Windows/Fonts/lucon.ttf",      # Lucida Console
-        "C:/Windows/Fonts/cour.ttf",       # Courier New
-        "C:/Windows/Fonts/consola.ttf",    # Consolas
+        "C:/Windows/Fonts/lucon.ttf",
+        "C:/Windows/Fonts/consola.ttf",
+        "C:/Windows/Fonts/cour.ttf",
     ]:
         try:
-            font = ImageFont.truetype(path, 11)
+            font = ImageFont.truetype(path, 12)
+            print(f"Using font: {path}")
             break
         except:
             continue
     if font is None:
         font = ImageFont.load_default()
+        print("Using default font")
 
     for row_idx, line in enumerate(ascii_lines):
         draw.text((0, row_idx * char_h), line, fill=(255, 255, 255), font=font)
@@ -121,13 +120,11 @@ def send_ascii_over_bt(ascii_lines, esp):
     esp.write(f"ASCII_START|{total}\n".encode())
     esp.flush()
     time.sleep(0.2)
-
     for i, line in enumerate(ascii_lines):
         esp.write((line + "\n").encode())
         esp.flush()
         time.sleep(0.01)
         print(f"  Line {i+1}/{total}", end="\r")
-
     time.sleep(0.1)
     esp.write(b"ASCII_END\n")
     esp.flush()
@@ -156,12 +153,13 @@ def main():
     canvas, ascii_lines = frame_to_ascii_image(frame, width=ASCII_WIDTH)
 
     canvas.save("ascii_preview.png")
-    print("Preview saved as ascii_preview.png")
+    print("Preview saved! Opening preview window...")
 
-    # Show preview
-    arr = np.array(canvas)
+    arr     = np.array(canvas)
     cv2_img = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
-    cv2_img = cv2.resize(cv2_img, (1000, 700))
+    h, w    = cv2_img.shape[:2]
+    scale   = min(1400/w, 900/h)
+    cv2_img = cv2.resize(cv2_img, (int(w*scale), int(h*scale)))
     cv2.imshow("ASCII Preview — press any key to send", cv2_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
