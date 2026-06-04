@@ -14,7 +14,7 @@ import PIL.ImageOps
 
 ESP32_PORT  = "COM4"
 BAUD_RATE   = 115200
-ASCII_WIDTH = 160
+ASCII_WIDTH = 2000
 
 # Reference image style:
 # BRIGHT skin/highlights → dense packed chars like @#%8&W
